@@ -11,7 +11,7 @@ from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, render
 
-from .forms import UserSuForm
+from .forms import UserSuForm, UserSuDalForm
 from .utils import su_login_callback, custom_login_action
 
 User = get_user_model()
@@ -55,7 +55,13 @@ def login_as_user(request, user_id):
 @csrf_protect
 @require_http_methods(['POST', 'GET'])
 @user_passes_test(su_login_callback)
-def su_login(request, form_class=UserSuForm, template_name='su/login.html'):
+def su_login(request, form_class=None, template_name='su/login.html'):
+    if form_class is None:
+        if getattr(settings, "SU_DAL_VIEW_NAME", None):
+            form_class=UserSuDalForm
+        else:
+            form_class=UserSuForm
+
     form = form_class(request.POST or None)
     if form.is_valid():
         return login_as_user(request, form.get_user().pk)
